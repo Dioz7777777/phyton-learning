@@ -1,8 +1,9 @@
 import datetime
-from typing import Dict
+from Student import Student
+from typing import Dict, List
 
 
-def read_grades_from_file(filename: str) -> Dict[str, float]:
+def read_grades_from_file(filename: str) -> Dict[str, Student]:
     result = {}
     with open(filename, "r") as file:
         lines = file.readlines()
@@ -18,22 +19,14 @@ def read_grades_from_file(filename: str) -> Dict[str, float]:
             name = line_values[0]
             grades = line_values[1:]
             grades_as_numbers = [float(grade) for grade in grades]
-            average = sum(grades_as_numbers) / len(grades_as_numbers)
-            result[name] = average
+            result[name] = Student(name, grades_as_numbers)
     return result
 
 
-def safe_float_conversion(input_value: str) -> float | None:
-    try:
-        return float(input_value)
-    except ValueError:
-        return None
-
-
-def show_result(dictionary: Dict[str, float]) -> None:
-    for key in dictionary.keys():
-        value = dictionary[key]
-        print(key + ":", value)
+def show_result(students: List[Student]) -> None:
+    for student in students:
+        student.show_result()
+        print('Is passed:', student.is_passed())
     now = datetime.datetime.now()
     print(now.strftime("%Y-%m-%d %H:%M"))
 
@@ -46,7 +39,9 @@ def main(file_name: str, sort_by: str) -> None:
 
     if sort_by == "N":
         sorted_by_name = dict(sorted(grades_result.items()))
-        show_result(sorted_by_name)
+        items = list(sorted_by_name.values())
+        show_result(items)
     elif sort_by == "A":
-        sorted_by_average = dict(sorted(grades_result.items(), key=lambda x: x[1]))
-        show_result(sorted_by_average)
+        sorted_by_average = dict(sorted(grades_result.items(), key=lambda x: x[1].calculate_average()))
+        items = list(sorted_by_average.values())
+        show_result(items)
