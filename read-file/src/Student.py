@@ -1,4 +1,5 @@
 from typing import List
+from logger import debug
 
 
 class Student:
@@ -8,11 +9,14 @@ class Student:
         self.grades = grades
 
     def calculate_average(self) -> float:
-        return sum(self.grades) / len(self.grades)
+        try:
+            return sum(self.grades) / len(self.grades)
+        except ZeroDivisionError:
+            return 0.0
 
     def is_passed(self) -> bool:
         return self.calculate_average() >= 2.0 and len(self.grades) >= 3
 
     def show_result(self):
-        print("Name: ", self.name)
-        print("Average: ", self.calculate_average())
+        debug("Name: " + self.name)
+        debug("Average: " + str(self.calculate_average()))
