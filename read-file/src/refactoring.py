@@ -1,52 +1,67 @@
 import datetime
-from typing import Dict
+from typing import Dict, List
+
+from logger import debug
+from Student import Student
+from Grade import Grade
 
 
-def read_grades_from_file(filename: str) -> Dict[str, float]:
-    result = {}
-    with open(filename, "r") as file:
-        lines = file.readlines()
-        for line in lines:
-            line_without_spaces = line.replace(" ", "")
-            line_values = line_without_spaces.split(",")
-            if not any(line_values):
-                print("Empty line")
-                continue
-            if len(line_values) == 1:
-                print(name + ":", "has no grades")
-                continue
-            name = line_values[0]
-            grades = line_values[1:]
-            grades_as_numbers = [float(grade) for grade in grades]
-            average = sum(grades_as_numbers) / len(grades_as_numbers)
-            result[name] = average
-    return result
-
-
-def safe_float_conversion(input_value: str) -> float | None:
+def safe_convert_to_float(value: str) -> float | None:
     try:
-        return float(input_value)
+        return float(value)
     except ValueError:
         return None
 
 
-def show_result(dictionary: Dict[str, float]) -> None:
-    for key in dictionary.keys():
-        value = dictionary[key]
-        print(key + ":", value)
+def read_grades_from_file(filename: str) -> Dict[str, Student]:
+    result = {}
+    try:
+        with open(filename, "r") as file:
+            for line in file.readlines():
+                if not line:
+                    debug("File is empty")
+                    continue
+                line_without_spaces = line.replace(" ", "")
+                name, *grades = line_without_spaces.split(",")
+                grades_as_numbers = []
+
+                for grade in grades:
+                    converted_grade = safe_convert_to_float(grade)
+                    if converted_grade is None:
+                        if grade == "":
+                            debug(name + ":" + "has empty grade")
+                            continue
+                        else:
+                            debug(name + ":" + f"Invalid grade: {grade}")
+                            continue
+                    if converted_grade < Grade.Min or converted_grade > Grade.Max:
+                        debug(name + ":" + f"Invalid grade: {converted_grade}")
+                        continue
+                    grades_as_numbers.append(converted_grade)
+
+                result[name] = Student(name, grades_as_numbers)
+        return result
+    except FileNotFoundError:
+        debug(f"File [{filename}] not found")
+        return result
+
+
+def show_result(students: List[Student]) -> None:
+    for student in students:
+        student.show_result()
+        debug('Is passed:' + str(student.is_passed()))
     now = datetime.datetime.now()
-    print(now.strftime("%Y-%m-%d %H:%M"))
+    debug(now.strftime("%Y-%m-%d %H:%M"))
 
 
 def main(file_name: str, sort_by: str) -> None:
     grades_result = read_grades_from_file(file_name)
-    if grades_result is None:
-        print("File not found")
-        return
 
     if sort_by == "N":
         sorted_by_name = dict(sorted(grades_result.items()))
-        show_result(sorted_by_name)
+        items = list(sorted_by_name.values())
+        show_result(items)
     elif sort_by == "A":
-        sorted_by_average = dict(sorted(grades_result.items(), key=lambda x: x[1]))
-        show_result(sorted_by_average)
+        sorted_by_average = dict(sorted(grades_result.items(), key=lambda x: x[1].calculate_average()))
+        items = list(sorted_by_average.values())
+        show_result(items)
